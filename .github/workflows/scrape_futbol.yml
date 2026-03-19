@@ -2,15 +2,17 @@ name: Scraper Futbol WhatsApp
 
 on:
   schedule:
-    # Se ejecuta todos los lunes a las 14:00 (Ajusta la hora UTC según tu país)
+    # Se ejecuta todos los lunes a las 14:00 UTC (ajusta según tu zona horaria)
     - cron: "0 14 * * 1"
-    # Se ejecuta todos los jueves a las 14:00
+    # Se ejecuta todos los jueves a las 14:00 UTC
     - cron: "0 14 * * 4"
   workflow_dispatch: # Permite ejecutar el script manualmente desde GitHub
 
 jobs:
   run-scraper:
     runs-on: ubuntu-latest
+    # Evita que el job se bloquee indefinidamente si algo falla (ej. sesión de WhatsApp no disponible)
+    timeout-minutes: 10
 
     steps:
       - name: Checkout repositorio
@@ -24,15 +26,43 @@ jobs:
       - name: Instalar pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 8
+          # FIX: Versión corregida de 8 a 10 para que coincida con package.json (pnpm@10.32.1)
+          # y con el lockfileVersion '9.0' del pnpm-lock.yaml
+          version: 10
 
       - name: Instalar dependencias
-        run: pnpm install
+        # FIX: --frozen-lockfile asegura que en CI se usen exactamente las versiones del lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Instalar dependencias del sistema para Puppeteer
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgbm-dev libnss3 libatk-bridge2.0-0 libasound2
+          sudo apt-get install -y \
+            libgbm-dev \
+            libnss3 \
+            libatk1.0-0 \
+            libatk-bridge2.0-0 \
+            libcups2 \
+            libdrm2 \
+            libxkbcommon0 \
+            libxcomposite1 \
+            libxdamage1 \
+            libxfixes3 \
+            libxrandr2 \
+            libpango-1.0-0 \
+            libcairo2 \
+            libasound2t64 \
+            fonts-liberation \
+            xdg-utils
+
+      - name: Cache de Chromium (Puppeteer)
+        # FIX: Cachear Chromium (~170 MB) para no descargarlo en cada ejecución
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/puppeteer
+          key: puppeteer-chromium-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            puppeteer-chromium-${{ runner.os }}-
 
       - name: Restaurar sesión de WhatsApp
         uses: actions/cache@v4
