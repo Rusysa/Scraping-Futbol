@@ -1,4 +1,4 @@
-name: Scraper Futbol WhatsApp
+name: Scraper Futbol Telegram
 
 on:
   schedule:
@@ -11,8 +11,7 @@ on:
 jobs:
   run-scraper:
     runs-on: ubuntu-latest
-    # Evita que el job se bloquee indefinidamente si algo falla (ej. sesión de WhatsApp no disponible)
-    timeout-minutes: 10
+    timeout-minutes: 5
 
     steps:
       - name: Checkout repositorio
@@ -24,57 +23,20 @@ jobs:
           node-version: "20"
 
       - name: Instalar pnpm
+        # pnpm/action-setup@v4 lee la versión automáticamente del campo
+        # "packageManager": "pnpm@10.32.1" en package.json. No se especifica
+        # "version" aqui para evitar el error "Multiple versions of pnpm specified".
         uses: pnpm/action-setup@v4
-        with:
-          # FIX: Versión corregida de 8 a 10 para que coincida con package.json (pnpm@10.32.1)
-          # y con el lockfileVersion '9.0' del pnpm-lock.yaml
-          version: 10
 
       - name: Instalar dependencias
-        # FIX: --frozen-lockfile asegura que en CI se usen exactamente las versiones del lockfile
+        # --frozen-lockfile asegura que en CI se usen exactamente las versiones del lockfile
         run: pnpm install --frozen-lockfile
 
-      - name: Instalar dependencias del sistema para Puppeteer
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libgbm-dev \
-            libnss3 \
-            libatk1.0-0 \
-            libatk-bridge2.0-0 \
-            libcups2 \
-            libdrm2 \
-            libxkbcommon0 \
-            libxcomposite1 \
-            libxdamage1 \
-            libxfixes3 \
-            libxrandr2 \
-            libpango-1.0-0 \
-            libcairo2 \
-            libasound2t64 \
-            fonts-liberation \
-            xdg-utils
-
-      - name: Cache de Chromium (Puppeteer)
-        # FIX: Cachear Chromium (~170 MB) para no descargarlo en cada ejecución
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/puppeteer
-          key: puppeteer-chromium-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: |
-            puppeteer-chromium-${{ runner.os }}-
-
-      - name: Restaurar sesión de WhatsApp
-        uses: actions/cache@v4
-        with:
-          path: .wwebjs_auth
-          # Usamos un key dinámico basado en el id de corrida para que siempre se guarde la última versión
-          key: wwebjs-auth-${{ github.run_id }}
-          # Si no encuentra el exacto, restaura el último disponible
-          restore-keys: |
-            wwebjs-auth-
-
-      - name: Ejecutar Scraper y Enviar WhatsApp
+      - name: Ejecutar Scraper y Enviar por Telegram
+        # Secrets necesarios (Settings -> Secrets and variables -> Actions):
+        #   TELEGRAM_BOT_TOKEN : token del bot obtenido desde @BotFather en Telegram
+        #   TELEGRAM_CHAT_ID   : ID del chat o grupo destino
         env:
-          WHATSAPP_TARGET_NUMBER: ${{ secrets.WHATSAPP_TARGET_NUMBER }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: node src/action.js

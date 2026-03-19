@@ -1,7 +1,8 @@
 require("dotenv").config();
 
 module.exports = {
-  whatsappTargetNumber: process.env.WHATSAPP_TARGET_NUMBER,
+  telegramBotToken: process.env.TELEGRAM_BOT_TOKEN,
+  telegramChatId: process.env.TELEGRAM_CHAT_ID,
   scrapeSchedule: process.env.SCRAPE_SCHEDULE || "0 8 * * *",
   targetLeagues: process.env.TARGET_LEAGUES
     ? process.env.TARGET_LEAGUES.split(",").map((l) => l.trim().toLowerCase())

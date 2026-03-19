@@ -25,48 +25,28 @@ function formatMatchesMessage(matches) {
     });
   }
 
-  message += "🏁 _¡Disfruta la semana de fútbol!_";
+  message += "🏁 _¡Disfruta la semana de fútbol\\!_";
   return message;
 }
 
-async function sendMatchSummary(client, targetNumber, matches) {
-  const message = formatMatchesMessage(matches);
-
-  if (!targetNumber || targetNumber.includes("X")) {
+async function sendMatchSummary(bot, chatId, matches) {
+  if (!chatId) {
     console.error(
-      "Error: Por favor, configura WHATSAPP_TARGET_NUMBER en el archivo .env",
+      "Error: Por favor, configura TELEGRAM_CHAT_ID en el archivo .env",
     );
     return;
   }
 
-  // Intenta obtener el ID correcto del número en los servidores de WhatsApp
-  let chatId = targetNumber;
-  if (!targetNumber.includes("@")) {
-    try {
-      const numberId = await client.getNumberId(targetNumber);
-      if (numberId) {
-        chatId = numberId._serialized;
-      } else {
-        // En México a veces se requiere agregar un '1' después del '52'
-        const altNumberId = await client.getNumberId(
-          targetNumber.replace(/^52/, "521"),
-        );
-        if (altNumberId) {
-          chatId = altNumberId._serialized;
-        } else {
-          chatId = targetNumber + "@c.us";
-        }
-      }
-    } catch (e) {
-      chatId = targetNumber + "@c.us";
-    }
-  }
+  const message = formatMatchesMessage(matches);
 
   try {
-    await client.sendMessage(chatId, message);
-    console.log("Resumen de partidos enviado exitosamente.");
+    await bot.sendMessage(chatId, message);
+    console.log("Resumen de partidos enviado exitosamente por Telegram.");
   } catch (error) {
-    console.error("Error al enviar mensaje por WhatsApp:", error.message);
+    console.error("Error al enviar mensaje por Telegram:", error.message);
+    if (error.response?.data) {
+      console.error("Respuesta de la API de Telegram:", error.response.data);
+    }
   }
 }
 
