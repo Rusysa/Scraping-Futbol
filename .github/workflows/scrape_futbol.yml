@@ -1,0 +1,50 @@
+name: Scraper Futbol WhatsApp
+
+on:
+  schedule:
+    # Se ejecuta todos los lunes a las 14:00 (Ajusta la hora UTC según tu país)
+    - cron: "0 14 * * 1"
+    # Se ejecuta todos los jueves a las 14:00
+    - cron: "0 14 * * 4"
+  workflow_dispatch: # Permite ejecutar el script manualmente desde GitHub
+
+jobs:
+  run-scraper:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repositorio
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Instalar pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
+      - name: Instalar dependencias
+        run: pnpm install
+
+      - name: Instalar dependencias del sistema para Puppeteer
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgbm-dev libnss3 libatk-bridge2.0-0 libasound2
+
+      - name: Restaurar sesión de WhatsApp
+        uses: actions/cache@v4
+        with:
+          path: .wwebjs_auth
+          # Usamos un key dinámico basado en el id de corrida para que siempre se guarde la última versión
+          key: wwebjs-auth-${{ github.run_id }}
+          # Si no encuentra el exacto, restaura el último disponible
+          restore-keys: |
+            wwebjs-auth-
+
+      - name: Ejecutar Scraper y Enviar WhatsApp
+        env:
+          WHATSAPP_TARGET_NUMBER: ${{ secrets.WHATSAPP_TARGET_NUMBER }}
+        run: node src/action.js
