@@ -68,7 +68,15 @@ async function scrapeMatches() {
               .replace(": VER PARTIDO", "")
               .replace("(Ver gratis)", "")
               .trim();
-            if (channelName) channels.push(channelName);
+              
+            if (channelName) {
+              const lowerChannel = channelName.toLowerCase();
+              // Excluir "TV Azteca" y "Azteca Deportes" pero mantener "Azteca 7" u otros
+              if (lowerChannel === "tv azteca" || lowerChannel === "azteca deportes") {
+                return; 
+              }
+              channels.push(channelName);
+            }
           });
 
           if (time && local && visitor) {
