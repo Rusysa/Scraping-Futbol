@@ -94,4 +94,42 @@ async function scrapeMatches() {
   }
 }
 
-module.exports = { scrapeMatches };
+async function scrapeResults() {
+  try {
+    const today = new Date();
+    const past = new Date(today);
+    past.setDate(past.getDate() - 4);
+    
+    const formatDate = d => d.toISOString().split('T')[0].replace(/-/g, '');
+    const startDate = formatDate(past);
+    const endDate = formatDate(today);
+    
+    const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/mex.1/scoreboard?dates=${startDate}-${endDate}`;
+    const { data } = await axios.get(url);
+    const results = [];
+    
+    for (const event of data.events || []) {
+      if (event.status.type.name === 'STATUS_FULL_TIME') {
+        const home = event.competitions[0].competitors[0];
+        const away = event.competitions[0].competitors[1];
+        
+        let fecha = new Date(event.date).toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City', weekday: 'long', day: '2-digit', month: '2-digit' });
+        fecha = fecha.charAt(0).toUpperCase() + fecha.slice(1);
+        
+        results.push({
+          fecha: fecha,
+          hora: "Finalizado",
+          equipos: `${home.team.name} ${home.score} - ${away.score} ${away.team.name}`,
+          canal: "Resultado",
+          competicion: 'Liga MX'
+        });
+      }
+    }
+    return results;
+  } catch (error) {
+    console.error("Error al obtener resultados de ESPN:", error.message);
+    return [];
+  }
+}
+
+module.exports = { scrapeMatches, scrapeResults };

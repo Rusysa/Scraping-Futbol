@@ -2,10 +2,10 @@ name: Scraper Futbol Telegram
 
 on:
   schedule:
-    # Se ejecuta todos los lunes a las 14:00 UTC (ajusta según tu zona horaria)
-    - cron: "0 14 * * 1"
-    # Se ejecuta todos los jueves a las 14:00 UTC
-    - cron: "0 14 * * 4"
+    # Se ejecuta los lunes a las 18:00 CDMX (00:00 UTC del martes)
+    - cron: "0 0 * * 2"
+    # Se ejecuta los jueves a las 18:00 CDMX (00:00 UTC del viernes)
+    - cron: "0 0 * * 5"
   workflow_dispatch: # Permite ejecutar el script manualmente desde GitHub
 
 jobs:
